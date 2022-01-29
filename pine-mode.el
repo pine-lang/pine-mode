@@ -54,7 +54,7 @@ Argument END Point where the query ends."
      :success (function* (lambda (&key data &allow-other-keys)
                            (when data
                              (apply callback `(,data))
-                             (message data)
+                             (message "%s" data)
                              )))
      )))
 
