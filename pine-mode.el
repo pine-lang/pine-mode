@@ -21,7 +21,7 @@
 
 ;;; Code:
 
-(defcustom pine-mode--pine-service-endpoint "http://localhost:3000/pine/build"
+(defcustom pine-mode--pine-service-endpoint "http://localhost:33333/pine/build"
   "Endpoint for the pine service")
 
 (defun pine-mode--get-string (start end)
