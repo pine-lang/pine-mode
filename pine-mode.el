@@ -18,10 +18,11 @@
 (require 's)
 (require 'sql)
 (require 'request)
+(require 'cl-lib)
 
 ;;; Code:
 
-(defcustom pine-mode--pine-service-endpoint "http://localhost:33333/pine/build"
+(defcustom pine-mode--pine-service-endpoint "http://localhost:33333/api/v1/build-with-params"
   "Endpoint for the pine service")
 
 (defun pine-mode--get-string (start end)
@@ -34,35 +35,39 @@ Argument END Point where the query ends."
 (defun pine-mode--string-at-point()
   "Build the query to be executed at point"
   (let ((start (save-excursion
-                 (backward-paragraph)
+                 (move-beginning-of-line nil)
                  (point)))
         (end (save-excursion
-               (forward-paragraph)
+               (move-end-of-line nil)
                (point))))
     (pine-mode--get-string start end)))
 
-(defun pine-mode--pine-build-at-point(callback)
+(defun pine-mode--pine-build-at-point (callback)
   "Build a query for the pine expression at point."
   (interactive)
   (let ((expression (s-trim (pine-mode--string-at-point))))
     (request pine-mode--pine-service-endpoint
-     :type "POST"
-     :data (json-encode `(("expression" . ,expression)))
-     :headers '(("Content-Type" . "application/json"))
-     ;; :parser 'json-read
-     :parser 'buffer-string
-     :success (function* (lambda (&key data &allow-other-keys)
-                           (when data
-                             (apply callback `(,data))
-                             (message "%s" data)
-                             )))
-     )))
+      :type "POST"
+      :data (json-encode `(("expression" . ,expression)))
+      :headers '(("Content-Type" . "application/json"))
+      :parser 'buffer-string
+      :success (cl-function
+                (lambda (&key data &allow-other-keys)
+                  (when data
+                    (funcall callback data)
+                    (message "%s" data)))))))
 
 (defun pine-mode--eval-at-point()
   "Evaluate a pine expression at point"
   (interactive)
   (pine-mode--pine-build-at-point 'sql-send-string)
   )
+
+(defun pine-mode--copy-at-point()
+  "Copy the result of building a Pine expression at point."
+  (interactive)
+  (pine-mode--pine-build-at-point 'kill-new))
+
 
 ;; Minor Mode
 (defvar pine-mode-map (make-sparse-keymap)
